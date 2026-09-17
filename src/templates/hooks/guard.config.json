@@ -1,0 +1,118 @@
+{
+  "_comment": "agentic-sdlc safety rules. This file is yours: `agentic-sdlc update` never overwrites your edits. mode: block | warn | off",
+  "mode": "block",
+  "blockSudo": true,
+  "protectedBranches": ["main", "master", "develop", "release/*"],
+  "secretPaths": [
+    "**/.env",
+    "**/.env.*",
+    "**/*.pem",
+    "**/*.p12",
+    "**/*.key",
+    "**/id_rsa",
+    "**/id_ed25519",
+    "**/*.keystore",
+    "**/*.jks",
+    "secrets/**",
+    "**/service-account*.json",
+    "**/google-services.json",
+    "**/GoogleService-Info.plist"
+  ],
+  "paths": {
+    "severity": "ask",
+    "protected": [
+      ".git/**",
+      "**/node_modules/**",
+      "**/migrations/**",
+      "**/*.lock",
+      "package-lock.json",
+      "pnpm-lock.yaml",
+      "yarn.lock",
+      ".github/workflows/**"
+    ],
+    "selfProtected": [
+      ".claude/hooks/guard.mjs",
+      ".claude/hooks/guard.config.json",
+      ".claude/settings.json"
+    ]
+  },
+  "bash": {
+    "gitSeverity": "deny",
+    "allow": [],
+    "deny": [
+      {
+        "pattern": "\\b(curl|wget)\\b[^|]*\\|\\s*(sudo\\s+)?(ba)?sh",
+        "reason": "piping a downloaded script straight into a shell runs unreviewed remote code"
+      },
+      {
+        "pattern": ":\\s*\\(\\s*\\)\\s*\\{.*\\|.*&.*\\}\\s*;\\s*:",
+        "reason": "fork bomb"
+      },
+      {
+        "pattern": "\\bdd\\b[^\\n]*\\bof=/dev/(disk|sd|nvme|rdisk)",
+        "reason": "writing raw bytes to a block device destroys the disk"
+      },
+      {
+        "pattern": "\\bmkfs(\\.|\\b)",
+        "reason": "formatting a filesystem"
+      },
+      {
+        "pattern": "\\bchmod\\s+(-[a-zA-Z]+\\s+)*0?777\\b",
+        "reason": "chmod 777 makes files world-writable"
+      },
+      {
+        "pattern": "\\b(npm|pnpm|yarn|bun)\\s+(un)?publish\\b",
+        "reason": "publishing to a package registry is public and hard to undo"
+      },
+      {
+        "pattern": "\\bcargo\\s+publish\\b|\\b(flutter\\s+)?(dart\\s+)?pub\\s+publish\\b",
+        "reason": "publishing to a package registry is public and hard to undo"
+      },
+      {
+        "pattern": "\\bterraform\\s+(destroy|apply\\b[^\\n]*-auto-approve)",
+        "reason": "unattended infrastructure change"
+      },
+      {
+        "pattern": "\\bkubectl\\s+delete\\b",
+        "reason": "deleting cluster resources"
+      },
+      {
+        "pattern": "\\baws\\s+s3\\s+(rb|rm\\b[^\\n]*--recursive)",
+        "reason": "recursive bucket deletion"
+      },
+      {
+        "pattern": "\\bdocker\\s+(system\\s+prune\\b[^\\n]*-a|volume\\s+rm)",
+        "reason": "removes volumes and images other projects may depend on"
+      },
+      {
+        "pattern": "\\bredis-cli\\b[^\\n]*\\bflush(all|db)\\b",
+        "reason": "flushing Redis wipes the datastore"
+      },
+      {
+        "pattern": "\\bdrop\\s+(database|schema|table)\\b",
+        "reason": "destructive SQL against a live database"
+      },
+      {
+        "pattern": "\\btruncate\\s+table\\b",
+        "reason": "destructive SQL against a live database"
+      },
+      {
+        "pattern": "\\bdelete\\s+from\\s+\\w+\\s*(;|$)",
+        "reason": "DELETE without a WHERE clause empties the table"
+      },
+      {
+        "pattern": "\\bhistory\\s+-c\\b|\\bshred\\b",
+        "reason": "destroying audit trail or data beyond recovery"
+      },
+      {
+        "pattern": "\\bgit\\s+filter-branch\\b|\\bgit\\s+reflog\\s+expire\\b",
+        "reason": "rewriting or expiring git history"
+      },
+      {
+        "pattern": "\\bnpm\\s+(login|token)\\b|\\bgh\\s+auth\\s+(login|token)\\b",
+        "reason": "credential operations belong to a human",
+        "severity": "ask"
+      }
+    ]
+  }
+}
