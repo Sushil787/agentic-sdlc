@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['18.17', '20.x', '22.x']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npx tsc -p tsconfig.json --noEmit
+      - run: npm test
+
+  smoke:
+    name: install into a real project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      # Install from a packed tarball rather than the source tree: this is what
+      # catches a template missing from the `files` field, which no unit test can.
+      - name: Pack and install globally
+        run: |
+          npm pack --silent
+          npm install -g ./agentic-sdlc-*.tgz
+
+      - name: Install into a fresh project
+        run: |
+          mkdir -p /tmp/demo && cd /tmp/demo
+          git init -q .
+          cat > package.json <<'EOF'
+          { "name": "demo", "scripts": { "test": "jest", "lint": "eslint ." } }
+          EOF
+          agentic-sdlc init --yes --pack full
+
+      - name: Doctor must pass
+        run: cd /tmp/demo && agentic-sdlc doctor
+
+      - name: Re-running must change nothing
+        run: |
+          cd /tmp/demo
+          agentic-sdlc init --yes > second-run.txt
+          grep -q "files already current" second-run.txt || {
+            echo "init was not idempotent:"; cat second-run.txt; exit 1;
+          }
+
+      - name: No unrendered template variables shipped
+        run: |
+          cd /tmp/demo
+          if grep -rIl '{{' .claude --exclude=guard.config.json; then
+            echo "unrendered template variables found"; exit 1
+          fi
+
+      - name: Guard must block a destructive command
+        run: |
+          cd /tmp/demo
+          set +e
+          echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /"}}' \
+            | node .claude/hooks/guard.mjs > /dev/null 2>&1
+          test $? -eq 2 || { echo "guard did not block rm -rf /"; exit 1; }

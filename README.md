@@ -2,11 +2,15 @@
 
 **An end-to-end software development lifecycle for [Claude Code](https://claude.com/claude-code) — installed into any repository with one command.**
 
+[![CI](https://github.com/Sushil787/agentic-sdlc/actions/workflows/ci.yml/badge.svg)](https://github.com/Sushil787/agentic-sdlc/actions/workflows/ci.yml)
+
 Issue triage, spec writing, planning, implementation, testing, code review, security review and release preflight, run by scoped agents with a human gate at every stage — plus hooks that block destructive actions before they execute.
 
 ```bash
-npx agentic-sdlc init
+agentic-sdlc init
 ```
+
+> **Not published to npm yet.** Install it from a clone — see [Setup](#setup). Everything below works the same way.
 
 ---
 
@@ -19,8 +23,13 @@ Everyone ends up hand-rolling the same `.claude/` directory: a reviewer agent he
 ## Quick start
 
 ```bash
-cd your-project
-npx agentic-sdlc init
+# once, on your machine
+git clone https://github.com/Sushil787/agentic-sdlc.git
+cd agentic-sdlc && npm install && npm run build && npm link
+
+# then, in any repository
+cd ~/your-project
+agentic-sdlc init
 ```
 
 ```
@@ -219,20 +228,41 @@ agentic-sdlc doctor    # fires a known-dangerous call at the guard and checks it
 - **git** — `/review` and `/ship` need it
 - **[`gh`](https://cli.github.com/)** — optional; `/ship` and `/triage` use it for PRs and issues
 
-### Install
+### Install from a clone
 
-Per-project, no global install needed:
+The package is not on npm yet, so install it from source. `npm link` puts
+`agentic-sdlc` on your PATH, pointing at the clone — so `git pull && npm run build`
+is all an upgrade takes.
 
 ```bash
+git clone https://github.com/Sushil787/agentic-sdlc.git
+cd agentic-sdlc
+npm install
+npm run build
+npm link
+```
+
+Check it:
+
+```bash
+agentic-sdlc --version
+agentic-sdlc list
+```
+
+**Prefer not to touch your global PATH?** Run it by path, or install a packed
+tarball into one project:
+
+```bash
+# by path
+node /path/to/agentic-sdlc/bin/agentic-sdlc.mjs init
+
+# or as a dev dependency of the target project
+cd /path/to/agentic-sdlc && npm pack          # -> agentic-sdlc-0.1.0.tgz
+cd ~/your-project && npm i -D /path/to/agentic-sdlc/agentic-sdlc-0.1.0.tgz
 npx agentic-sdlc init
 ```
 
-Or globally, if you set up many repos:
-
-```bash
-npm install -g agentic-sdlc
-agentic-sdlc init
-```
+**Unlinking later:** `npm unlink -g agentic-sdlc`.
 
 ### Commit it
 
@@ -479,6 +509,15 @@ npm install
 npm run build
 npm test          # cohesion + installer + guard suites
 ```
+
+CI runs on every push and pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
+
+- **`test`** — typecheck and the full suite on Node 18.17, 20 and 22.
+- **`smoke`** — packs a tarball, installs it globally, runs `init` into a fresh
+  project, then asserts `doctor` passes, a second `init` changes nothing, no
+  unrendered `{{variable}}` shipped, and the installed guard still blocks
+  `rm -rf /`. Installing from the tarball is what catches a template left out of
+  the `files` field, which no unit test can see.
 
 The cohesion suite enforces that the pieces refer to each other: every agent a command delegates to ships in the same pack, every reference file a skill links to travels with it, every template variable is one the renderer provides, and every stage agrees on where its artifact lives. Add an agent or command without wiring it up and the suite fails.
 

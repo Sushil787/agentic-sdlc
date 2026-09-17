@@ -29,7 +29,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "node scripts/build.mjs && node bin/agentic-sdlc.mjs",
-    "test": "npm run build && node --test \"test/*.test.mjs\"",
+    "test": "npm run build && node --test test/*.test.mjs",
     "prepublishOnly": "npm run build && npm test"
   },
   "devDependencies": {
