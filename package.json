@@ -1,0 +1,39 @@
+{
+  "name": "agentic-sdlc",
+  "version": "0.1.0",
+  "description": "An autonomous end-to-end software development lifecycle framework powered by Claude. Automates issue triage, feature design, code generation, testing, and PR reviews using multi-agent workflows.",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "agents",
+    "sdlc",
+    "ai",
+    "scaffold",
+    "cli"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "bin": {
+    "agentic-sdlc": "bin/agentic-sdlc.mjs",
+    "asdlc": "bin/agentic-sdlc.mjs"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs && node bin/agentic-sdlc.mjs",
+    "test": "npm run build && node --test test/",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
