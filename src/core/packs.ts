@@ -67,9 +67,18 @@ function settings(extraAllow: string[] = [], extraDeny: string[] = []): Settings
 
 const SHARED_FILES = ['hooks/guard.mjs', 'hooks/guard.config.json', 'sdlc/workflow.md'];
 
-const SKILL_COMMIT = 'skills/commit-and-pr/SKILL.md';
-const SKILL_TESTS = 'skills/test-conventions/SKILL.md';
-const SKILL_RELEASE = 'skills/release-checklist/SKILL.md';
+// A skill is its SKILL.md plus the reference files it links to, which Claude
+// loads only when the work needs them.
+const SKILL_REQUIREMENTS = ['skills/requirements/SKILL.md', 'skills/requirements/reference.md'];
+const SKILL_ARCHITECTURE = [
+  'skills/architecture-decisions/SKILL.md',
+  'skills/architecture-decisions/adr-template.md',
+  'skills/architecture-decisions/reference.md',
+];
+const SKILL_TESTS = ['skills/test-conventions/SKILL.md', 'skills/test-conventions/patterns.md'];
+const SKILL_REVIEW = ['skills/code-review-rubric/SKILL.md', 'skills/code-review-rubric/checklist.md'];
+const SKILL_COMMIT = ['skills/commit-and-pr/SKILL.md', 'skills/commit-and-pr/pr-template.md'];
+const SKILL_RELEASE = ['skills/release-checklist/SKILL.md', 'skills/release-checklist/runbook.md'];
 
 const NODE_ALLOW = [
   'Bash(npm test:*)',
@@ -106,6 +115,7 @@ export const PACKS: Record<PackId, Pack> = {
       'agents/security-reviewer.md',
       'agents/deployer.md',
       'commands/triage.md',
+      'commands/spec.md',
       'commands/plan.md',
       'commands/implement.md',
       'commands/test.md',
@@ -113,9 +123,12 @@ export const PACKS: Record<PackId, Pack> = {
       'commands/ship.md',
       'commands/deploy.md',
       'commands/sdlc.md',
-      SKILL_COMMIT,
-      SKILL_TESTS,
-      SKILL_RELEASE,
+      ...SKILL_REQUIREMENTS,
+      ...SKILL_ARCHITECTURE,
+      ...SKILL_TESTS,
+      ...SKILL_REVIEW,
+      ...SKILL_COMMIT,
+      ...SKILL_RELEASE,
       ...SHARED_FILES,
     ],
     settings: settings(NODE_ALLOW),
@@ -125,7 +138,17 @@ export const PACKS: Record<PackId, Pack> = {
     label: 'Minimal',
     hint: 'plan + review only',
     description: 'Just the planner and reviewer, plus the safety hooks. A light touch for existing repos.',
-    files: ['agents/planner.md', 'agents/reviewer.md', 'commands/plan.md', 'commands/review.md', ...SHARED_FILES],
+    files: [
+      'agents/planner.md',
+      'agents/reviewer.md',
+      // /review escalates to this one; shipping the command without the agent
+      // would leave a dangling delegation.
+      'agents/security-reviewer.md',
+      'commands/plan.md',
+      'commands/review.md',
+      ...SKILL_REVIEW,
+      ...SHARED_FILES,
+    ],
     settings: settings(),
   },
   backend: {
@@ -143,15 +166,19 @@ export const PACKS: Record<PackId, Pack> = {
       'agents/security-reviewer.md',
       'agents/deployer.md',
       'commands/triage.md',
+      'commands/spec.md',
       'commands/plan.md',
       'commands/implement.md',
       'commands/test.md',
       'commands/review.md',
       'commands/ship.md',
       'commands/deploy.md',
-      SKILL_COMMIT,
-      SKILL_TESTS,
-      SKILL_RELEASE,
+      ...SKILL_REQUIREMENTS,
+      ...SKILL_ARCHITECTURE,
+      ...SKILL_TESTS,
+      ...SKILL_REVIEW,
+      ...SKILL_COMMIT,
+      ...SKILL_RELEASE,
       ...SHARED_FILES,
     ],
     settings: settings(NODE_ALLOW, [
@@ -173,14 +200,18 @@ export const PACKS: Record<PackId, Pack> = {
       'agents/developer.md',
       'agents/tester.md',
       'agents/reviewer.md',
+      'agents/security-reviewer.md',
       'commands/triage.md',
+      'commands/spec.md',
       'commands/plan.md',
       'commands/implement.md',
       'commands/test.md',
       'commands/review.md',
       'commands/ship.md',
-      SKILL_COMMIT,
-      SKILL_TESTS,
+      ...SKILL_REQUIREMENTS,
+      ...SKILL_TESTS,
+      ...SKILL_REVIEW,
+      ...SKILL_COMMIT,
       ...SHARED_FILES,
     ],
     settings: settings(FLUTTER_ALLOW),
