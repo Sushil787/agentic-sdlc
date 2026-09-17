@@ -171,8 +171,9 @@ test('templates render with the project\'s real commands', () => {
   run(root);
   const workflow = readFileSync(join(root, '.claude/sdlc/workflow.md'), 'utf8');
 
-  assert.ok(workflow.includes('jest'), 'detected test command missing from the docs');
-  assert.ok(workflow.includes('eslint .'), 'detected lint command missing from the docs');
+  // Detection yields the invocation a developer would type, not the script body.
+  assert.ok(workflow.includes('`npm test`'), 'detected test command missing from the docs');
+  assert.ok(workflow.includes('`npm run lint`'), 'detected lint command missing from the docs');
   assert.equal(/\{\{\w+\}\}/.test(workflow), false, 'an unrendered variable was shipped');
   rmSync(root, { recursive: true, force: true });
 });
@@ -184,7 +185,8 @@ test('a project with no lint script gets no empty lint instruction', () => {
   apply({ root, packId: 'minimal', version: VERSION, force: false, dryRun: false, prune: false });
   const workflow = readFileSync(join(root, '.claude/sdlc/workflow.md'), 'utf8');
 
-  assert.ok(workflow.includes('vitest'));
-  assert.equal(workflow.includes('- Typecheck: ``'), false, 'rendered an empty command');
+  assert.ok(workflow.includes('`npm test`'));
+  assert.equal(/- (Lint|Typecheck|Build): ``/.test(workflow), false, 'rendered an empty command');
+  assert.equal(workflow.includes('- Lint:'), false, 'documented a lint command the project has not got');
   rmSync(root, { recursive: true, force: true });
 });

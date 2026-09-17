@@ -44,6 +44,19 @@ function nodeFramework(pkg: PackageJson): string {
 
 const BACKEND_FRAMEWORKS = new Set(['NestJS', 'Fastify', 'Express', 'Koa', 'Hono', 'Node.js']);
 
+const ESLINT_CONFIGS = [
+  'eslint.config.js',
+  'eslint.config.mjs',
+  'eslint.config.cjs',
+  'eslint.config.ts',
+  '.eslintrc',
+  '.eslintrc.js',
+  '.eslintrc.cjs',
+  '.eslintrc.json',
+  '.eslintrc.yml',
+  '.eslintrc.yaml',
+];
+
 function detectNode(root: string, pkg: PackageJson): Detection {
   const pm = detectPackageManager(root);
   const scripts = pkg.scripts ?? {};
@@ -59,10 +72,18 @@ function detectNode(root: string, pkg: PackageJson): Detection {
     pkg.dependencies?.typescript !== undefined;
   const framework = nodeFramework(pkg);
 
+  // Only fall back to a bare `eslint .` when the project actually has ESLint.
+  // Telling an agent to run a linter that is not installed wastes a turn and
+  // teaches it to ignore failing verification steps.
+  const hasEslint =
+    ESLINT_CONFIGS.some((file) => existsSync(join(root, file))) ||
+    pkg.devDependencies?.eslint !== undefined ||
+    pkg.dependencies?.eslint !== undefined;
+
   const commands: ProjectCommands = {
     install: pm === 'npm' ? 'npm install' : `${pm} install`,
     test: scripts.test !== undefined ? (pm === 'npm' ? 'npm test' : `${pm} test`) : 'npm test',
-    lint: script('lint') ?? `${pm === 'npm' ? 'npx' : `${pm} dlx`} eslint .`,
+    lint: script('lint') ?? (hasEslint ? `${pm === 'npm' ? 'npx' : `${pm} dlx`} eslint .` : ''),
     build: script('build') ?? '',
     typecheck: script('typecheck', 'type-check', 'tsc') ?? (isTs ? 'npx tsc --noEmit' : ''),
   };
